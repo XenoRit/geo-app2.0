@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocation-Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            max-width: 600px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Geolocation-Tracker</h1>
+    <p>Klicke auf den Button, um deinen Standort zu verfolgen.</p>
+    <button id="startTracking">Tracking starten</button>
+    <button id="stopTracking" disabled>Tracking stoppen</button>
+    <div id="output">
+        <strong>Ausgabe:</strong>
+        <p id="log">Noch keine Daten...</p>
+    </div>
+
+    <script>
+        // Elemente referenzieren
+        const startButton = document.getElementById('startTracking');
+        const stopButton = document.getElementById('stopTracking');
+        const log = document.getElementById('log');
+
+        let watchId = null; // Speichert die Überwachungs-ID
+
+        // Funktion: Tracking starten
+        function startTracking() {
+            if (!("geolocation" in navigator)) {
+                log.textContent = "Geolocation wird von deinem Browser nicht unterstützt.";
+                return;
+            }
+
+            log.textContent = "Tracking wird gestartet...";
+            startButton.disabled = true;
+            stopButton.disabled = false;
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude, accuracy } = position.coords;
+                    log.innerHTML = `
+                        Standort erfasst:<br>
+                        Breitengrad: ${latitude.toFixed(6)}<br>
+                        Längengrad: ${longitude.toFixed(6)}<br>
+                        Genauigkeit: ±${accuracy} Meter
+                    `;
+                },
+                (error) => {
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            log.textContent = "Standortzugriff wurde verweigert.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            log.textContent = "Standortinformationen sind nicht verfügbar.";
+                            break;
+                        case error.TIMEOUT:
+                            log.textContent = "Die Standortabfrage ist abgelaufen.";
+                            break;
+                        default:
+                            log.textContent = "Ein unbekannter Fehler ist aufgetreten.";
+                            break;
+                    }
+                    stopTracking(); // Fehler => Tracking beenden
+                },
+                options
+            );
+        }
+
+        // Funktion: Tracking stoppen
+        function stopTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                log.textContent = "Tracking gestoppt.";
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        }
+
+        // Event-Listener für Buttons
+        startButton.addEventListener('click', startTracking);
+        stopButton.addEventListener('click', stopTracking);
+    </script>
+</body>
+</html>
